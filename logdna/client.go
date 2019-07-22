@@ -1,0 +1,135 @@
+package logdna
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/evalphobia/httpwrapper/request"
+)
+
+// Client handles logging to LogDNA.
+type Client struct {
+	Config
+	daemon *Daemon
+}
+
+// New creates initialized *Client.
+func New(conf Config) (*Client, error) {
+	err := conf.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	cli := &Client{
+		Config: conf,
+	}
+
+	if !conf.Sync {
+		cli.RunDaemon(conf.getCheckpointSize(), conf.getCheckpointInterval())
+	}
+	return cli, nil
+}
+
+// Debug sends a debug level log.
+func (c *Client) Debug(line string, opt ...map[string]interface{}) error {
+	return c.EmitWithLevel(LogLevelDebug, line, opt...)
+}
+
+// Trace sends a trace level log.
+func (c *Client) Trace(line string, opt ...map[string]interface{}) error {
+	return c.EmitWithLevel(LogLevelTrace, line, opt...)
+}
+
+// Info sends a info level log.
+func (c *Client) Info(line string, opt ...map[string]interface{}) error {
+	return c.EmitWithLevel(LogLevelInfo, line, opt...)
+}
+
+// Warn sends a warning level log.
+func (c *Client) Warn(line string, opt ...map[string]interface{}) error {
+	return c.EmitWithLevel(LogLevelWarn, line, opt...)
+}
+
+// Err sends a error level log.
+func (c *Client) Err(line string, opt ...map[string]interface{}) error {
+	return c.EmitWithLevel(LogLevelError, line, opt...)
+}
+
+// Fatal sends a fatal level log.
+func (c *Client) Fatal(line string, opt ...map[string]interface{}) error {
+	return c.EmitWithLevel(LogLevelFatal, line, opt...)
+}
+
+// Emit sends a log of a given level.
+func (c *Client) EmitWithLevel(level, line string, opt ...map[string]interface{}) error {
+	if !isMoreLevel(c.MinimumLevel, level) {
+		return nil
+	}
+	if len(opt) != 0 {
+		opt[0]["level"] = level
+	}
+
+	return c.Emit(line, opt...)
+}
+
+// Emit sends a log.
+func (c *Client) Emit(line string, opt ...map[string]interface{}) error {
+	d := LogData{
+		Message: line,
+	}
+	if len(opt) != 0 {
+		d.Meta = opt[0]
+	}
+
+	return c.emit(d)
+}
+
+func (c *Client) emit(d LogData) error {
+	if c.Sync {
+		return c.send([]*logPayload{d.toPayload()})
+	}
+
+	c.daemon.Add(d.toPayload())
+	return nil
+}
+
+// RunDaemon runs a Daemon in background.
+func (c *Client) RunDaemon(size int, interval time.Duration) {
+	c.daemon = NewDaemon(size, interval, c.send)
+	c.daemon.Run()
+}
+
+func (c *Client) send(logs []*logPayload) error {
+	if len(logs) == 0 {
+		return nil
+	}
+
+	jsonData, err := logsToJSON(logs)
+	if err != nil {
+		return err
+	}
+
+	return c.callAPI(jsonData)
+}
+
+// callAPI sends POST request to endpoint.
+func (c *Client) callAPI(params interface{}) error {
+	conf := c.Config
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+	url := fmt.Sprintf("%s?hostname=%s&mac=%s&ip=%s&now=%d", conf.endpoint, conf.hostname, conf.macaddr, conf.ip, now)
+
+	resp, err := request.POST(url, request.Option{
+		Payload:     params,
+		PayloadType: request.PayloadTypeJSON,
+		User:        conf.apikey,
+		Retry:       !conf.NoRetry,
+		Debug:       conf.Debug,
+		UserAgent:   "go-logdna/v0.0.1",
+		Timeout:     conf.timeout,
+	})
+	if err != nil {
+		return err
+	}
+	defer resp.Close()
+	return nil
+}
