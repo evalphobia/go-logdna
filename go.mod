@@ -1,6 +1,6 @@
 module github.com/evalphobia/go-logdna
 
-go 1.12
+go 1.14
 
 require (
 	github.com/evalphobia/httpwrapper v0.2.0

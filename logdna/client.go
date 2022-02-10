@@ -15,8 +15,7 @@ type Client struct {
 
 // New creates initialized *Client.
 func New(conf Config) (*Client, error) {
-	err := conf.Init()
-	if err != nil {
+	if err := conf.Init(); err != nil {
 		return nil, err
 	}
 
@@ -65,26 +64,20 @@ func (c *Client) EmitWithLevel(level, line string, opt ...map[string]interface{}
 	if !isMoreLevel(c.MinimumLevel, level) {
 		return nil
 	}
-	if len(opt) != 0 {
-		opt[0]["level"] = level
-	}
 
-	return c.Emit(line, opt...)
-}
-
-// Emit sends a log.
-func (c *Client) Emit(line string, opt ...map[string]interface{}) error {
 	d := LogData{
 		Message: line,
+		Level:   level,
+		App:     c.App,
+		Env:     c.Env,
 	}
 	if len(opt) != 0 {
 		d.Meta = opt[0]
 	}
-
-	return c.emit(d)
+	return c.Emit(d)
 }
 
-func (c *Client) emit(d LogData) error {
+func (c *Client) Emit(d LogData) error {
 	if c.Sync {
 		return c.send([]*logPayload{d.toPayload()})
 	}
@@ -130,6 +123,5 @@ func (c *Client) callAPI(params interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Close()
-	return nil
+	return resp.Close()
 }

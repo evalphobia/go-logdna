@@ -2,7 +2,7 @@
 
 lint:
 	@type golangci-lint > /dev/null || go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-	golangci-lint -E gofmt run ./...
+	golangci-lint run ./...
 
 test:
 	@type gosec > /dev/null || go get github.com/securego/gosec/cmd/gosec
