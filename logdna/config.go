@@ -7,16 +7,14 @@ import (
 )
 
 const (
-	defaultEnvAPIKey          = "LOGDNA_API_KEY"
+	defaultEnvAPIKey          = "LOGDNA_API_KEY" // #nosec G101
 	defaultEndpoint           = "https://logs.logdna.com/logs/ingest"
 	defaultTimeoput           = time.Second * 30
 	defaultCheckpointSize     = 64
 	defaultCheckpointInterval = time.Second * 1
 )
 
-var (
-	envAPIKey string
-)
+var envAPIKey string
 
 func init() {
 	envAPIKey = os.Getenv(defaultEnvAPIKey)
@@ -58,13 +56,13 @@ type Config struct {
 
 func (c Config) Validate() error {
 	if len(c.App) > 32 {
-		return fmt.Errorf("`App` length is [%d]. It must be lower than 32.", len(c.App))
+		return fmt.Errorf("`App` length is [%d]. It must be lower than 32", len(c.App))
 	}
 	if len(c.Env) > 32 {
-		return fmt.Errorf("`Env` length is [%d]. It must be lower than 32.", len(c.Env))
+		return fmt.Errorf("`Env` length is [%d]. It must be lower than 32", len(c.Env))
 	}
 	if len(c.Hostname) > 32 {
-		return fmt.Errorf("`Hostname` length is [%d]. It must be lower than 32.", len(c.Hostname))
+		return fmt.Errorf("`Hostname` length is [%d]. It must be lower than 32", len(c.Hostname))
 	}
 	return nil
 }

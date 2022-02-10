@@ -1,0 +1,48 @@
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - node_modules
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - deadcode
+    - dupl
+    - errcheck
+    - goconst
+    - gocyclo
+    - gofmt
+    - gofumpt
+    - goimports
+    - gosec
+    - gosimple
+    - ifshort
+    - ineffassign
+    - misspell
+    - nakedret
+    - prealloc
+    - predeclared
+    - revive
+    - structcheck
+    - thelper
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+    - varcheck
+
+
+issues:
+  exclude-use-default: false
+  exclude:
+    - '(comment on exported (method|function|type|const|var)|should have( a package)? comment|comment should be of the form)'
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - goconst
+        - gocyclo
+        - bodyclose

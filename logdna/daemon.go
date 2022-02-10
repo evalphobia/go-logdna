@@ -56,8 +56,7 @@ func (d *Daemon) Flush() {
 
 // shiftLog retrieves logs.
 func shiftLog(slice []*logPayload, size int) (part []*logPayload, all []*logPayload) {
-	l := len(slice)
-	if l <= size {
+	if len(slice) <= size {
 		return slice, slice[:0]
 	}
 	return slice[:size], slice[size:]
