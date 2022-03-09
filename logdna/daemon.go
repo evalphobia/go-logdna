@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// Daemon is background daemon for sending logs.
-// This struct stores logs and sends log to LogDNA in each checkpoint timing.
+// Daemon is a background daemon for sending logs.
+// This struct stores logs and sends them to LogDNA once per checkpoint interval.
 type Daemon struct {
 	flushLogs func([]*logPayload) error
 
@@ -18,9 +18,9 @@ type Daemon struct {
 }
 
 // NewDaemon creates new Daemon.
-// size is number of logs to send LogDNA API in single checkpoint.
-// interval is the time of checkpoint interval.
-// fn is function called in each checkpoint, to sends logs to LogDNA API.
+// size is the number of logs to send LogDNA API in single checkpoint.
+// interval is the length of the checkpoint interval.
+// fn is function called at each checkpoint to sends logs to the LogDNA API.
 func NewDaemon(size int, interval time.Duration, fn func([]*logPayload) error) *Daemon {
 	if size < 1 {
 		size = 10
@@ -38,14 +38,14 @@ func NewDaemon(size int, interval time.Duration, fn func([]*logPayload) error) *
 	}
 }
 
-// Add adds log data into daemon.
+// Add adds log data to the daemon.
 func (d *Daemon) Add(logs ...*logPayload) {
 	d.spoolMu.Lock()
 	d.spool = append(d.spool, logs...)
 	d.spoolMu.Unlock()
 }
 
-// Flush gets logs from the internal spool and execute flushLogs function.
+// Flush gets logs from the internal spool and execute the flushLogs function.
 func (d *Daemon) Flush() {
 	d.spoolMu.Lock()
 	var logs []*logPayload
@@ -62,7 +62,7 @@ func shiftLog(slice []*logPayload, size int) (part []*logPayload, all []*logPayl
 	return slice[:size], slice[size:]
 }
 
-// Run sets timer to flush data in each checkpoint as a background daemon.
+// Run sets the timer to flush data once per checkpoint interval as a background daemon in a goroutine.
 func (d *Daemon) Run() {
 	ticker := time.NewTicker(d.checkpointInterval)
 	go func() {
@@ -78,7 +78,7 @@ func (d *Daemon) Run() {
 	}()
 }
 
-// Stop stops daemon.
+// Stop stops the daemon.
 func (d *Daemon) Stop() {
 	d.stopSignal <- struct{}{}
 }

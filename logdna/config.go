@@ -20,7 +20,7 @@ func init() {
 	envAPIKey = os.Getenv(defaultEnvAPIKey)
 }
 
-// Config contains parameters for LogDNA.
+// Config contains parameters for the LogDNA client.
 type Config struct {
 	APIKey string
 

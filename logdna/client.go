@@ -13,7 +13,7 @@ type Client struct {
 	daemon *Daemon
 }
 
-// New creates initialized *Client.
+// New creates an initialized *Client.
 func New(conf Config) (*Client, error) {
 	if err := conf.Init(); err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (c *Client) send(logs []*logPayload) error {
 	return c.callAPI(jsonData)
 }
 
-// callAPI sends POST request to endpoint.
+// callAPI sends a POST request to endpoint.
 func (c *Client) callAPI(params interface{}) error {
 	conf := c.Config
 	now := time.Now().UnixNano() / int64(time.Millisecond)
